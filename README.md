@@ -177,3 +177,16 @@ Si este código es útil para tu investigación, por favor citarlo como:
 ## Licencia
 
 Este proyecto está bajo la licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## Citing this work
+
+If you use this pipeline in your research, please cite it as follows:
+
+```bibtex
+@misc{bee-behavior-analysis,
+  author       = {Fitte, Franco},
+  title        = {Bee Antennae Behavioral Analysis: A DeepLabCut + CEBRA Pipeline},
+  year         = {2026},
+  publisher    = {GitHub},
+  url          = {[https://github.com/xikarioz/bee-behavior-analysis](https://github.com/xikarioz/bee-behavior-analysis)}
+}
