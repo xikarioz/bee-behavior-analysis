@@ -1,0 +1,37 @@
+# ─── Core científico ──────────────────────────────────────
+numpy>=1.24
+scipy>=1.11
+pandas>=2.0
+polars>=0.19
+h5py>=3.9
+
+# ─── Deep learning ────────────────────────────────────────
+# torch: instalar manualmente según CUDA disponible
+# https://pytorch.org/get-started/locally/
+# torch>=2.0
+# torchvision>=0.15
+
+# DeepLabCut Live (inferencia)
+dlclive>=0.3
+
+# ─── Procesamiento de señales ─────────────────────────────
+vmdpy>=0.1
+astropy>=5.3           # Para análisis de Hilbert-Huang (HHT)
+
+# ─── Representación latente ───────────────────────────────
+cebra>=0.4
+
+# ─── Topología algebraica (TDA) ───────────────────────────
+ripser>=0.6
+persim>=0.3
+
+# ─── Visualización ────────────────────────────────────────
+matplotlib>=3.7
+seaborn>=0.13
+
+# ─── Hardware (Raspberry Pi — opcional) ───────────────────
+# pyserial>=3.5         # Comunicación con Arduino (descomentar si aplica)
+
+# ─── Utilidades ───────────────────────────────────────────
+tqdm>=4.66
+joblib>=1.3
