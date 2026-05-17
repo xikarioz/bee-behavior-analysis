@@ -3,190 +3,212 @@
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python)](https://www.python.org/)
 [![DeepLabCut](https://img.shields.io/badge/DeepLabCut-2.x-orange)](https://github.com/DeepLabCut/DeepLabCut)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Research%20%2F%20In%20progress-yellow)]()
+[![Species](https://img.shields.io/badge/Species-Apis%20mellifera-gold)]()
 
-Pipeline completo de *machine learning* y análisis de series temporales para el estudio del comportamiento de antenas de abejas (*Apis mellifera*). El proyecto extrae cinemática de alta resolución con **DeepLabCut** y aplica métodos de sistemas dinámicos, análisis espectral y topología algebraica para identificar y caracterizar estados comportamentales.
+A complete machine-learning and signal-analysis pipeline for studying honey bee (*Apis mellifera*) antennae behavior from video recordings.
 
----
-
-## Tabla de contenidos
-
-1. [Descripción general](#descripción-general)
-2. [Estructura del repositorio](#estructura-del-repositorio)
-3. [Instalación](#instalación)
-4. [Uso rápido](#uso-rápido)
-5. [Módulos en detalle](#módulos-en-detalle)
-6. [Dependencias](#dependencias)
-7. [Cita](#cita)
-8. [Licencia](#licencia)
+Keypoints are extracted at high resolution using **DeepLabCut**, then analyzed with dynamical systems methods, spectral analysis, latent embeddings, and algebraic topology to identify and characterize behavioral states.
 
 ---
 
-## Descripción general
+## Table of contents
 
-El pipeline está organizado en dos etapas principales:
+1. [Pipeline overview](#pipeline-overview)
+2. [Repository structure](#repository-structure)
+3. [Installation](#installation)
+4. [Usage](#usage)
+5. [Modules](#modules)
+6. [Dependencies](#dependencies)
+7. [Citing this work](#citing-this-work)
+8. [License](#license)
+
+---
+
+## Pipeline overview
 
 ```
-Video crudo → [Extracción DLC] → Keypoints (HDF5/CSV) → [Análisis dinámico] → Figuras / estadísticas
+Raw video → [DeepLabCut inference] → Keypoints (HDF5/CSV)
+                                            │
+              ┌─────────────────────────────┼─────────────────────────────┐
+              │                             │                             │
+        Signal analysis               Latent space               Event detection
+        VMD · HHT · CWT              CEBRA · TDA                Twitch detector
+              │                             │                             │
+              └─────────────────────────────┴─────────────────────────────┘
+                                            │
+                                   Publication figures
+                              (paper_maestro: 15 · cebra_paper: 10)
 ```
 
-**Extracción de posturas** — inferencia de keypoints anatómicos sobre videos de alta velocidad usando modelos ResNet-50 entrenados con DeepLabCut. Incluye modos de procesamiento secuencial, paralelo en batch y tiempo real sobre Raspberry Pi con sincronización de estímulos via Arduino.
+### Sample outputs
 
-**Análisis dinámico** — descomposición modal variacional (VMD), transformada de Hilbert-Huang (HHT), representaciones latentes con CEBRA, homología persistente (TDA), sincronización de fase (modelo de Kuramoto) y detección de eventos ultrarrápidos (*twitches*).
+<!-- Once you export figures, place PNGs in assets/ and uncomment these lines -->
+<!-- ![Polar rose activity plot](assets/rose_actividad.png) -->
+<!-- ![VMD intrinsic modes](assets/vmd_lento.png) -->
+<!-- ![CEBRA latent embedding](assets/cebra_embedding.png) -->
+<!-- ![Twitch detection](assets/twitch_detection.png) -->
+<!-- ![CWT vs HHT comparison](assets/cwt_vs_hht.png) -->
+
+> **Add figures here.** Export any PNG from `paper_maestro.py` or `cebra_paper.py`, place it in `assets/`, and uncomment the lines above.
 
 ---
 
-## Estructura del repositorio
+## Repository structure
 
 ```
 bee-behavior-analysis/
-│
+├── assets/                      # README figures — place exported PNGs here
+├── extraccion_dlc/              # Pose estimation with DeepLabCut
+│   ├── abejas_linux.py          #   Sequential inference → HDF5/CSV
+│   ├── abejas_paralelo.py       #   Batch processing (GPU)
+│   ├── abejas_pi_v2.py          #   Real-time inference (Raspberry Pi + Arduino)
+│   └── analizar_completo.py     #   Full extraction pipeline with export
+├── analisis_y_figuras/          # Quantitative analysis and publication figures
+│   ├── paper_maestro.py         #   Polar plots, VMD, HHT, CWT (15 figures)
+│   ├── cebra_paper.py           #   CEBRA embeddings, TDA, Kuramoto, Wasserstein
+│   ├── twitch_analysis.py       #   Ultrafast event detection
+│   └── vmd_rapido.py            #   High-frequency VMD (fs = 2 Hz, 0.5 s window)
 ├── README.md
-├── .gitignore
 ├── requirements.txt
-│
-├── extraccion_dlc/                  # Inferencia de posturas con DeepLabCut
-│   ├── abejas_linux.py              #   Inferencia secuencial estándar → HDF5/CSV
-│   ├── abejas_paralelo.py           #   Procesamiento en batch (GPU)
-│   ├── abejas_pi_v2.py              #   Inferencia en tiempo real (Raspberry Pi + Arduino)
-│   └── analizar_completo.py         #   Pipeline de extracción completo con exportación
-│
-└── analisis_y_figuras/              # Análisis cuantitativo y figuras de publicación
-    ├── paper_maestro.py             #   Figuras polares, VMD, espectro de Hilbert
-    ├── cebra_paper.py               #   Embeddings CEBRA, TDA, Kuramoto, Wasserstein
-    ├── twitch_analysis.py           #   Detección estadística de eventos ultrarrápidos
-    └── vmd_rapido.py                #   VMD de alta frecuencia (fs = 2 Hz, ventana 0.5 s)
+└── LICENSE
 ```
 
 ---
 
-## Instalación
+## Installation
 
-### Requisitos previos
+### Prerequisites
 
 - Python ≥ 3.9
-- CUDA ≥ 11.3 (recomendado para inferencia GPU)
-- [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut) instalado en un entorno conda separado (ver su documentación oficial)
+- CUDA ≥ 11.3 (recommended for GPU inference)
+- [DeepLabCut](https://github.com/DeepLabCut/DeepLabCut) installed in a separate conda environment (see their official docs)
 
-### Entorno recomendado
+### Setup
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/TU_USUARIO/bee-behavior-analysis.git
+git clone https://github.com/xikarioz/bee-behavior-analysis.git
 cd bee-behavior-analysis
 
-# Crear entorno virtual
 python -m venv .venv
-source .venv/bin/activate          # Linux / macOS
-# .venv\Scripts\activate           # Windows
+source .venv/bin/activate       # Linux / macOS
+# .venv\Scripts\activate        # Windows
 
-# Instalar dependencias
 pip install -r requirements.txt
 ```
 
-> **Nota:** `dlclive` y `deeplabcut` pueden requerir instalación por separado siguiendo las instrucciones de sus repositorios oficiales según el hardware disponible (GPU/CPU/Raspberry Pi).
+For PyTorch, follow the [official installation guide](https://pytorch.org/get-started/locally/) and select the build that matches your CUDA version. Then install DeepLabCut separately following [their documentation](https://github.com/DeepLabCut/DeepLabCut).
 
 ---
 
-## Uso rápido
+## Usage
 
-### 1. Extraer keypoints de un video
+Each script has a `CONFIG` block near the top. Edit the paths there before running — no command-line arguments are needed.
 
-```bash
-# Inferencia estándar (un solo video)
-python extraccion_dlc/abejas_linux.py \
-    --config /ruta/al/config.yaml \
-    --video /ruta/al/video.mp4 \
-    --output resultados/
+### 1. Extract keypoints
 
-# Procesamiento en batch (múltiples videos en paralelo)
-python extraccion_dlc/abejas_paralelo.py \
-    --config /ruta/al/config.yaml \
-    --input_dir videos/ \
-    --output_dir resultados/
+Open `extraccion_dlc/abejas_linux.py` and set:
+
+```python
+# ── Edit these before running ─────────────────────────────────
+CONFIG_PATH = "/path/to/your/dlc_config.yaml"
+VIDEO_PATH  = "/path/to/your/video.mp4"
+OUTPUT_DIR  = "/path/to/output/"
 ```
 
-### 2. Generar figuras del paper
+Then run the appropriate script for your setup:
 
 ```bash
-# Figuras polares + VMD + espectro de Hilbert
-python analisis_y_figuras/paper_maestro.py \
-    --data resultados/keypoints.h5 \
-    --output figuras/
+# Standard sequential inference (single video, Linux/macOS)
+python extraccion_dlc/abejas_linux.py
 
-# Embeddings CEBRA y análisis topológico
-python analisis_y_figuras/cebra_paper.py \
-    --data resultados/keypoints.h5 \
-    --output figuras/
+# Batch processing across multiple videos (GPU recommended)
+python extraccion_dlc/abejas_paralelo.py
+
+# Real-time inference on Raspberry Pi with Arduino stimulus sync
+python extraccion_dlc/abejas_pi_v2.py
+```
+
+### 2. Generate publication figures
+
+Open `analisis_y_figuras/paper_maestro.py` and `cebra_paper.py` and set:
+
+```python
+# ── Edit these before running ─────────────────────────────────
+CSV_PATH   = "/path/to/your/poses_completo.csv"
+OUTPUT_DIR = "/path/to/output/figures/"
+```
+
+Then run:
+
+```bash
+# 15 figures: polar rose plots, VMD modes, HHT spectra, CWT vs HHT comparison
+python analisis_y_figuras/paper_maestro.py
+
+# CEBRA embeddings, TDA, Kuramoto synchronization, Wasserstein distances
+python analisis_y_figuras/cebra_paper.py
+
+# Ultrafast event (twitch) detection and behavioral state analysis
+python analisis_y_figuras/twitch_analysis.py
+
+# High-frequency VMD over short windows
+python analisis_y_figuras/vmd_rapido.py
 ```
 
 ---
 
-## Módulos en detalle
+## Modules
 
 ### `extraccion_dlc/`
 
-| Script | Descripción |
+| Script | Description |
 |---|---|
-| `abejas_linux.py` | Inferencia secuencial con DeepLabCut. Exporta coordenadas de keypoints en formato HDF5 y CSV con metadatos de likelihood por frame. |
-| `abejas_paralelo.py` | Motor de inferencia en batch optimizado para GPU. Permite procesar múltiples videos concurrentemente reduciendo el tiempo total de análisis. |
-| `abejas_pi_v2.py` | Inferencia en tiempo real sobre Raspberry Pi usando `dlclive`. Incluye control de hardware vía Arduino para la entrega de estímulos sincronizados con la captura de video. |
-| `analizar_completo.py` | Pipeline integrado: preprocesamiento de video → inferencia → filtrado de baja confianza → exportación. |
+| `abejas_linux.py` | Sequential DeepLabCut inference. Exports keypoint coordinates in HDF5 and CSV with per-frame likelihood metadata. |
+| `abejas_paralelo.py` | GPU-optimized batch inference engine. Processes multiple videos concurrently to reduce total analysis time. |
+| `abejas_pi_v2.py` | Real-time inference on Raspberry Pi using `dlclive`. Includes hardware control via Arduino for synchronized stimulus delivery. |
+| `analizar_completo.py` | Integrated pipeline: video preprocessing → inference → low-confidence filtering → export. |
 
 ### `analisis_y_figuras/`
 
-| Script | Descripción |
+| Script | Description |
 |---|---|
-| `paper_maestro.py` | Generación de gráficas polares de dirección de movimiento, descomposición VMD en modos intrínsecos y espectros de Hilbert-Huang (HHT) para análisis de frecuencia instantánea. |
-| `cebra_paper.py` | Entrenamiento y evaluación de modelos CEBRA para representaciones latentes del movimiento antenal. Incluye homología persistente (Ripser), sincronización de fase (modelo de Kuramoto) y distancias de Wasserstein entre distribuciones de estados. |
-| `twitch_analysis.py` | Detección automática de eventos ultrarrápidos (*twitches*) mediante umbralización adaptativa. Evalúa la dependencia del estado comportamental en la frecuencia y amplitud de los eventos. |
-| `vmd_rapido.py` | VMD sobre ventanas cortas (0.5 s) a alta frecuencia de muestreo para resolver ritmos rápidos en la dinámica antenal. |
+| `paper_maestro.py` | Generates 15 publication figures: polar rose plots of activity, Variational Mode Decomposition (VMD) intrinsic modes, Hilbert-Huang Transform (HHT) instantaneous frequency spectra, and CWT Morlet spectrograms. |
+| `cebra_paper.py` | Trains and evaluates CEBRA models for latent representations of antennal movement. Includes persistent homology (Ripser), phase synchronization (Kuramoto model), and Wasserstein distances between behavioral state distributions. |
+| `twitch_analysis.py` | Automatic detection of ultrafast events (*twitches*) via adaptive thresholding. Evaluates dependency of event frequency and amplitude on behavioral state. |
+| `vmd_rapido.py` | VMD over short windows (0.5 s) at high sampling rate to resolve fast rhythms in antennal dynamics. |
 
 ---
 
-## Dependencias
+## Dependencies
 
-Las dependencias principales se listan en `requirements.txt`. A continuación un resumen por categoría:
-
-| Categoría | Paquetes |
+| Category | Packages |
 |---|---|
 | Deep learning / Pose estimation | `torch`, `dlclive`, `deeplabcut` |
-| Análisis de señales | `scipy`, `vmdpy`, `astropy` |
-| Datos tabulares | `numpy`, `pandas`, `polars`, `h5py` |
-| Representación latente | `cebra` |
-| Topología algebraica (TDA) | `ripser`, `persim` |
-| Visualización | `matplotlib`, `seaborn` |
+| Signal analysis | `scipy`, `vmdpy`, `astropy` |
+| Tabular data | `numpy`, `pandas`, `polars`, `h5py` |
+| Latent representation | `cebra` |
+| Algebraic topology (TDA) | `ripser`, `persim` |
+| Visualization | `matplotlib`, `seaborn` |
+| Utilities | `tqdm`, `joblib` |
 
 ---
 
-## Cita
+## Citing this work
 
-Si este código es útil para tu investigación, por favor citarlo como:
+If you use this pipeline in your research, please cite it as:
 
 ```bibtex
 @misc{bee-behavior-analysis,
-  author       = {Autor, Nombre},
-  title        = {Bee Antennae Behavioral Analysis: A DeepLabCut + CEBRA Pipeline},
-  year         = {2025},
-  publisher    = {GitHub},
-  url          = {https://github.com/TU_USUARIO/bee-behavior-analysis}
+  author    = {Fitte, Franco},
+  title     = {Bee Antennae Behavioral Analysis: A DeepLabCut + CEBRA Pipeline},
+  year      = {2026},
+  publisher = {GitHub},
+  url       = {https://github.com/xikarioz/bee-behavior-analysis}
 }
 ```
 
 ---
 
-## Licencia
+## License
 
-Este proyecto está bajo la licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
-
-## Citing this work
-
-If you use this pipeline in your research, please cite it as follows:
-
-```bibtex
-@misc{bee-behavior-analysis,
-  author       = {Fitte, Franco},
-  title        = {Bee Antennae Behavioral Analysis: A DeepLabCut + CEBRA Pipeline},
-  year         = {2026},
-  publisher    = {GitHub},
-  url          = {[https://github.com/xikarioz/bee-behavior-analysis](https://github.com/xikarioz/bee-behavior-analysis)}
-}
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
